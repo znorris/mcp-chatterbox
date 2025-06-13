@@ -1,0 +1,8 @@
+mcp>=1.0.0
+torch>=2.0.0
+torchaudio>=2.0.0
+chatterbox-tts>=0.1.0
+pydantic>=2.0.0
+uvicorn>=0.24.0
+starlette>=0.27.0
+sse-starlette>=1.6.0
