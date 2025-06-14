@@ -42,12 +42,13 @@ logger = logging.getLogger(__name__)
 class ChatterboxMCPServer:
     """MCP Server for Chatterbox TTS with quantized model support."""
     
-    def __init__(self, hot_reload=False):
+    def __init__(self, hot_reload=False, model_id=None):
         self.server = Server("chatterbox-tts")
         self.model: Optional[ChatterboxTTS] = None
         self.voice_store: Dict[str, bytes] = {}  # Named voice state cache
         self.current_voice = "default"
         self.device = self._get_device()
+        self.model_id = model_id  # Store model_id for later use
         self.hot_reload = hot_reload
         self.last_modified = None
         if self.hot_reload:
@@ -287,8 +288,10 @@ class ChatterboxMCPServer:
     async def _ensure_model_loaded(self):
         """Ensure the Chatterbox TTS model is loaded."""
         if self.model is None:
-            logger.info(f"Loading Chatterbox TTS model on device: {self.device}")
-            self.model = ChatterboxTTS.from_pretrained(device=self.device)
+            # Priority: CLI arg > env var > default
+            model_id = self.model_id or os.getenv("CHATTERBOX_MODEL", "t3_cfg-q6_k.gguf")
+            logger.info(f"Loading Chatterbox TTS model '{model_id}' on device: {self.device}")
+            self.model = ChatterboxTTS.from_pretrained(model_id=model_id, device=self.device)
             # Save default voice to voice store
             self.voice_store["default"] = self._save_voice_state(self.model.conds)
             logger.info(f"Default voice saved to voice store - conds type: {type(self.model.conds)}")
@@ -639,9 +642,14 @@ async def main():
         action="store_true",
         help="Enable hot reloading (experimental)"
     )
+    parser.add_argument(
+        "--model",
+        default=None,
+        help="Chatterbox TTS model to use (e.g., t3_cfg-q6_k.gguf). Overrides CHATTERBOX_MODEL env var."
+    )
     
     args = parser.parse_args()
-    server = ChatterboxMCPServer(hot_reload=args.hot_reload)
+    server = ChatterboxMCPServer(hot_reload=args.hot_reload, model_id=args.model)
     
     if args.transport == "stdio":
         await server.run_stdio()

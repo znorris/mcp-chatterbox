@@ -65,6 +65,19 @@ python mcp_server.py
 python mcp_server.py --transport sse --host localhost --port 8000
 ```
 
+### Model selection
+```bash
+# Use environment variable
+export CHATTERBOX_MODEL="t3_cfg-q4_k.gguf"
+python mcp_server.py
+
+# Or use command line argument
+python mcp_server.py --model t3_cfg-q8_0.gguf
+
+# Enable hot reload with specific model
+python mcp_server.py --hot-reload --model t3_cfg-f16.gguf
+```
+
 ## Key Implementation Details
 
 - Model initialization is deferred until first tool call to avoid startup delays
