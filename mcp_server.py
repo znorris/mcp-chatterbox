@@ -291,7 +291,7 @@ class ChatterboxMCPServer:
             # Priority: CLI arg > env var > default
             model_id = self.model_id or os.getenv("CHATTERBOX_MODEL", "t3_cfg-q6_k.gguf")
             logger.info(f"Loading Chatterbox TTS model '{model_id}' on device: {self.device}")
-            self.model = ChatterboxTTS.from_pretrained(model_id=model_id, device=self.device)
+            self.model = ChatterboxTTS.from_pretrained(device=self.device)
             # Save default voice to voice store
             self.voice_store["default"] = self._save_voice_state(self.model.conds)
             logger.info(f"Default voice saved to voice store - conds type: {type(self.model.conds)}")
