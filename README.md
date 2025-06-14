@@ -1,511 +1,180 @@
-# MCP Chatterbox
+# MCP Chatterbox TTS
 
-A Model Context Protocol (MCP) server for Chatterbox TTS with quantized model support, voice cloning capabilities, and optimized performance on Apple Silicon.
+A Claude Code MCP server that adds text-to-speech and voice cloning capabilities to your Claude sessions.
 
-## Features
+## What This Does
 
-- **Quantized Model Support**: Uses 6-bit quantized models (q6_k.gguf) for efficient memory usage
-- **Voice Cloning**: Clone voices from audio samples for personalized speech generation
-- **Apple Silicon Optimization**: Leverages MPS (Metal Performance Shaders) for accelerated inference on Mac
-- **CUDA Support**: Full CUDA acceleration on compatible systems
-- **Adjustable Voice Control**: Fine-tune voice characteristics with exaggeration parameters
+- **Generate Speech**: Convert any text to high-quality audio
+- **Voice Cloning**: Clone voices from audio samples in seconds
+- **Voice Library**: Save and switch between multiple cloned voices
+- **Smart Audio Processing**: Automatically optimize audio files for best results
 
-## Installation
+## Quick Start for Claude Code Users
 
-### Prerequisites
-
-This MCP server requires Python 3.8+ and the Chatterbox TTS library with its quantized models.
-
-### Step 1: Install System Dependencies
-
-#### macOS
-```bash
-# Install Python 3.8+ if not already installed
-brew install python
-
-# For Apple Silicon Macs, ensure you have the latest macOS for MPS support
-```
-
-#### Linux (Ubuntu/Debian)
-```bash
-# Install Python and development tools
-sudo apt update
-sudo apt install python3 python3-pip python3-venv build-essential
-
-# For NVIDIA GPU support, install CUDA toolkit (optional)
-# Follow: https://developer.nvidia.com/cuda-downloads
-```
-
-#### Windows
-```bash
-# Install Python 3.8+ from https://python.org or via Chocolatey
-choco install python
-
-# For NVIDIA GPU support, install CUDA toolkit (optional)
-# Follow: https://developer.nvidia.com/cuda-downloads
-```
-
-### Step 2: Install Chatterbox TTS and Models
-
-The Chatterbox TTS system uses quantized models for efficient inference. You have two options:
-
-#### Option A: Automatic Model Download (Recommended)
-```bash
-# Install the Chatterbox TTS library - models will download automatically
-pip install chatterbox-tts
-```
-
-The first time you run the MCP server, it will automatically download the required models:
-- **Text-to-Audio Model**: `t3_cfg-q6_k.gguf` (~417MB) - 6-bit quantized transformer model
-- **Voice Encoder Models**: `ve_fp32-f16.gguf` and `ve_fp32-f32.gguf` - For voice cloning
-- **Neural Vocoder**: Various other supporting models
-
-#### Option B: Manual Model Download
-If you prefer to download models manually or have specific model requirements:
+### 1. Install the Server
 
 ```bash
-# Clone the original Chatterbox repository
-git clone https://github.com/resemble-ai/chatterbox.git
-cd chatterbox
-
-# Download models using their provided scripts
-python download_models.py
-
-# Available quantized model variants:
-# - t3_cfg-q4_k.gguf (smaller, faster, lower quality)
-# - t3_cfg-q6_k.gguf (recommended balance)
-# - t3_cfg-q8_0.gguf (larger, slower, higher quality)
-# - t3_cfg-f16.gguf (unquantized, highest quality)
-```
-
-### Step 3: Install This MCP Server
-
-Clone and install the MCP server:
-
-```bash
-# Clone this repository
+# Clone and set up the project
 git clone https://github.com/znorris/mcp-chatterbox.git
 cd mcp-chatterbox
 
-# Create virtual environment (recommended)
+# Create isolated environment and install
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install the MCP server and dependencies
 pip install -e .
 ```
 
-### Step 4: Configure Claude Code
+### 2. Add to Claude Code
 
-Add the Chatterbox MCP server to your Claude Code configuration:
+Edit your `~/.claude.json` file to add this server:
 
-#### macOS/Linux
-Edit `~/.claude.json` and add to the `mcpServers` section:
-
+**macOS/Linux:**
 ```json
 {
   "mcpServers": {
     "chatterbox-tts": {
-      "type": "stdio",
       "command": "/path/to/mcp-chatterbox/venv/bin/python",
-      "args": ["/path/to/mcp-chatterbox/mcp_server.py"],
-      "env": {}
-    }
-  }
-}
-```
-
-**Example with actual paths:**
-```json
-{
-  "mcpServers": {
-    "chatterbox-tts": {
-      "type": "stdio",
-      "command": "/Users/username/mcp-chatterbox/venv/bin/python",
-      "args": ["/Users/username/mcp-chatterbox/mcp_server.py"],
-      "env": {}
-    }
-  }
-}
-```
-
-#### Windows
-Edit `%USERPROFILE%\.claude.json` and add to the `mcpServers` section:
-
-```json
-{
-  "mcpServers": {
-    "chatterbox-tts": {
-      "type": "stdio",
-      "command": "C:\\path\\to\\mcp-chatterbox\\venv\\Scripts\\python.exe",
-      "args": ["C:\\path\\to\\mcp-chatterbox\\mcp_server.py"],
-      "env": {}
-    }
-  }
-}
-```
-
-**Important Notes:**
-- Use the full path to the Python executable in your project's virtual environment
-- The `env` object should be empty since the venv contains all dependencies
-- Replace `/path/to/mcp-chatterbox` with your actual project path
-
-### Step 5: Restart Claude Code
-
-Restart Claude Code to load the new MCP server. You should see "chatterbox-tts" available in the MCP server list.
-
-## Usage
-
-### As an MCP Server
-
-#### STDIO Transport (default)
-Configure your MCP client to use this server over STDIO:
-
-```json
-{
-  "mcpServers": {
-    "chatterbox-tts": {
-      "command": "python",
       "args": ["/path/to/mcp-chatterbox/mcp_server.py"]
     }
   }
 }
 ```
 
-#### SSE Transport (HTTP)
-Run the server with SSE transport for HTTP-based communication:
-
-```bash
-python mcp_server.py --transport sse --host localhost --port 8000
-```
-
-Then configure your MCP client:
-
+**Windows:**
 ```json
 {
   "mcpServers": {
     "chatterbox-tts": {
-      "url": "http://localhost:8000/sse"
+      "command": "C:\\path\\to\\mcp-chatterbox\\venv\\Scripts\\python.exe",
+      "args": ["C:\\path\\to\\mcp-chatterbox\\mcp_server.py"]
     }
   }
 }
 ```
 
-### Available Tools
+> **💡 Tip**: Replace `/path/to/mcp-chatterbox` with your actual project location. Use `pwd` (macOS/Linux) or `cd` (Windows) to find your current path.
 
-#### `chatterbox_tts_generate`
-Generate speech from text using the default voice or with voice cloning.
+### 3. Restart Claude Code
 
-Parameters:
-- `text` (required): The text to convert to speech
-- `audio_prompt_path` (optional): Path to audio file for voice cloning
-- `output_path` (optional): Output file path (defaults to temp file)
-- `exaggeration` (optional): Voice exaggeration factor (0.0 to 1.0, default: 0.5)
+Restart Claude Code to load the TTS server. You'll see "chatterbox-tts" in your available tools.
 
-#### `chatterbox_tts_prepare_audio`
-Prepare and optimize audio files for voice cloning (convert MP3/other formats to optimal WAV).
+### 4. First Use
 
-Parameters:
-- `input_path` (required): Path to input audio file (MP3, WAV, etc.)
-- `output_path` (optional): Output path for optimized WAV file (defaults to temp file)
-- `target_sample_rate` (optional): Target sample rate in Hz (default: 24000)
-- `mono` (optional): Convert to mono (recommended for voice cloning, default: true)
-- `normalize` (optional): Normalize audio volume (default: true)
-- `trim_silence` (optional): Trim silence from beginning and end (default: true)
+On first use, the system will automatically download AI models (~500MB). This happens once and takes 2-3 minutes depending on your internet speed.
 
-#### `chatterbox_tts_clone_voice`
-Generate speech with voice cloning from an audio sample.
+## How to Use
 
-Parameters:
-- `text` (required): The text to convert to speech
-- `voice_sample_path` (required): Path to audio file containing voice to clone
-- `output_path` (optional): Output file path (defaults to temp file)
-- `exaggeration` (optional): Voice exaggeration factor (0.0 to 1.0, default: 0.5)
+### Basic Text-to-Speech
 
-#### `chatterbox_tts_info`
-Get information about the Chatterbox TTS model and system capabilities.
+Ask Claude to generate speech from any text:
 
-#### `chatterbox_tts_voice_store`
-Manage voice store - save, load, list, and delete different voice states for seamless voice switching.
+> "Generate speech for: Hello, this is my first TTS sample!"
 
-Parameters:
-- `action` (required): Action to perform on voice store ("save", "load", "list", "delete")
-- `voice_name` (optional): Name of the voice to save/load/delete
-- `voice_sample_path` (optional): Path to audio file for saving new voice (required for 'save' action)
+### Voice Cloning  
 
-### Voice Store System
+1. **Prepare an audio file** (MP3 or WAV, 7-20 seconds of clear speech)
+2. **Clone the voice**: "Clone this voice from my audio file at `/path/to/voice_sample.wav` and say 'Hello world'"
+3. **Save for reuse**: "Save this voice as 'narrator' in the voice store"
 
-The voice store system allows you to save and manage multiple voice configurations for seamless switching between different cloned voices without re-processing audio samples each time.
+### Voice Library Management
 
-#### Save a Voice
-```python
-# Save a voice from an audio sample
-result = await client.call_tool("chatterbox_tts_voice_store", {
-    "action": "save",
-    "voice_name": "narrator_voice",
-    "voice_sample_path": "/path/to/narrator_sample.wav"
-})
-```
+- **List voices**: "Show me all voices in the voice store"
+- **Use saved voice**: "Generate speech using the 'narrator' voice: Welcome to my podcast"
+- **Delete voice**: "Remove the 'narrator' voice from the store"
 
-#### List Available Voices
-```python
-# List all saved voices
-result = await client.call_tool("chatterbox_tts_voice_store", {
-    "action": "list"
-})
-```
+## Model Selection (Optional)
 
-#### Generate Speech with Saved Voice
-```python
-# Use a saved voice by name
-result = await client.call_tool("chatterbox_tts_generate", {
-    "text": "Hello, this uses my saved narrator voice!",
-    "voice_name": "narrator_voice",
-    "output_path": "/path/to/output.wav"
-})
-```
+Choose the right model for your system:
 
-#### Delete a Voice
-```python
-# Remove a voice from the store
-result = await client.call_tool("chatterbox_tts_voice_store", {
-    "action": "delete",
-    "voice_name": "narrator_voice"
-})
-```
+| Your System | Recommended Model | Setup |
+|-------------|------------------|-------|
+| MacBook Air, basic laptop | `q4_k` (fastest) | `export CHATTERBOX_MODEL="t3_cfg-q4_k.gguf"` |
+| Standard laptop/desktop | `q6_k` (default) | No setup needed |
+| High-end system | `f16` (best quality) | `export CHATTERBOX_MODEL="t3_cfg-f16.gguf"` |
 
-The voice store automatically saves a "default" voice when the model first loads, and all voice states are preserved in memory for the duration of the server session.
+Set the environment variable before starting Claude Code to use a different model.
 
-### Voice Cloning Workflow
+## Audio Quality Tips
 
-The typical workflow for voice cloning with optimal results:
+For best voice cloning results, use audio that is:
+- **7-20 seconds long** (sweet spot for quality)
+- **Single speaker only** (no background voices)
+- **Clear recording** (minimal background noise)
+- **Consistent volume** (not too quiet or distorted)
 
-1. **Prepare your audio file** using `chatterbox_tts_prepare_audio`:
-   ```python
-   # This will convert your MP3 to an optimized WAV file
-   result = await client.call_tool("chatterbox_tts_prepare_audio", {
-       "input_path": "/path/to/your/voice_sample.mp3",
-       "output_path": "/path/to/optimized_voice.wav"
-   })
-   ```
+The server includes an audio preparation tool that automatically optimizes your files.
 
-2. **Generate speech with voice cloning** using `chatterbox_tts_clone_voice`:
-   ```python
-   # Use the optimized audio for best cloning results
-   result = await client.call_tool("chatterbox_tts_clone_voice", {
-       "text": "Your text to synthesize",
-       "voice_sample_path": "/path/to/optimized_voice.wav",
-       "exaggeration": 0.6
-   })
-   ```
+## Troubleshooting
 
-The `chatterbox_tts_prepare_audio` tool automatically handles:
-- **Format conversion**: MP3/other formats → WAV
-- **Sample rate optimization**: Any rate → 24kHz (optimal for Chatterbox)
-- **Channel optimization**: Stereo → Mono (reduces complexity)
-- **Volume normalization**: Ensures consistent levels
-- **Silence trimming**: Removes dead air for better cloning
+**"ModuleNotFoundError" when starting Claude Code:**
+- Ensure you activated the virtual environment before installing: `source venv/bin/activate`
+- Check that the Python path in `~/.claude.json` points to the venv Python
 
-## Voice Cloning Audio Preparation
+**Models downloading slowly:**
+- First-time setup downloads ~500MB of AI models
+- This is normal and only happens once
+- Subsequent starts are fast (2-3 seconds)
 
-### Preparing Audio Files for Voice Cloning
+**Voice cloning sounds distorted:**
+- Use the audio preparation tool: "Prepare this audio file for voice cloning: `/path/to/audio.mp3`"
+- Ensure your source audio is clean and clear
+- Try a longer audio sample (10+ seconds)
 
-To achieve the best voice cloning results with Chatterbox TTS, your reference audio files should meet these specifications:
+**Server not appearing in Claude Code:**
+- Double-check the paths in `~/.claude.json` match your installation
+- Ensure you restarted Claude Code after editing the config
+- Check the server logs for error messages
 
-#### Duration Requirements
-- **Minimum**: 5 seconds (system can work with as little as this)
-- **Recommended**: 10+ seconds for optimal quality
-- **Sweet spot**: 7-20 seconds provides excellent zero-shot voice cloning
+## Available Tools
 
-#### Format and Quality Specifications
-- **Preferred format**: WAV (highest quality)
-- **Supported formats**: WAV, MP3
-- **Sample rate**: 24kHz or higher (minimum)
-- **Channels**: Mono preferred, stereo acceptable
-- **Bit depth**: 16-bit minimum, 24-bit preferred
+When you ask Claude to work with audio, it will automatically use these tools:
 
-#### Audio Quality Requirements
-- **Single speaker only**: No background voices or overlapping speech
-- **Clean recording**: No background noise, music, or interference
-- **Professional quality**: Use a good microphone if possible
-- **Consistent volume**: Avoid clipping or very quiet sections
+- **`chatterbox_tts_generate`**: Create speech from text
+- **`chatterbox_tts_clone_voice`**: Clone a voice from audio sample  
+- **`chatterbox_tts_voice_store`**: Manage your voice library
+- **`chatterbox_tts_prepare_audio`**: Optimize audio files for cloning
+- **`chatterbox_tts_info`**: Check system status and capabilities
 
-#### Content and Style Guidelines
-- **Emotional matching**: The emotion in your reference audio should match your desired output
-- **Speaking style consistency**: Use similar speaking style to your intended use case
-  - For audiobook generation: Use audiobook-style narration samples
-  - For conversational speech: Use natural conversation samples
-  - For dramatic content: Use expressive, dramatic samples
-- **Clear pronunciation**: Ensure words are clearly articulated
-- **Natural pacing**: Avoid rushed or unnaturally slow speech
+You don't need to remember these names - just ask Claude in natural language what you want to do with audio.
 
-#### Converting MP3 to Optimal Format
+## Advanced Configuration
 
-If you have an MP3 file, you can convert it to the optimal WAV format using common tools:
-
-##### Using FFmpeg (recommended)
+### Custom Model Selection
 ```bash
-# Convert MP3 to high-quality WAV
-ffmpeg -i input.mp3 -ar 24000 -ac 1 -f wav output.wav
+# Use a specific model for your session
+python mcp_server.py --model t3_cfg-q8_0.gguf
 
-# For even higher quality (48kHz)
-ffmpeg -i input.mp3 -ar 48000 -ac 1 -f wav output.wav
+# Enable development hot-reload
+python mcp_server.py --hot-reload --model t3_cfg-f16.gguf
 ```
 
-##### Using Python (programmatically)
-```python
-import torchaudio
+### Memory Requirements
+- **q4_k**: 2GB+ RAM (basic systems)
+- **q6_k**: 3GB+ RAM (recommended default) 
+- **q8_0**: 4GB+ RAM (high quality)
+- **f16**: 6GB+ RAM (maximum quality)
 
-# Load and resample audio
-waveform, sample_rate = torchaudio.load("input.mp3")
-resampled = torchaudio.transforms.Resample(sample_rate, 24000)(waveform)
-torchaudio.save("output.wav", resampled, 24000)
-```
-
-#### Quality Impact on Output
-- **High-quality reference audio**: Results in natural, clear voice cloning
-- **Poor quality reference audio**: May produce distorted or unnatural speech
-- **Background noise**: Can significantly reduce cloning accuracy
-- **Multiple speakers**: Will confuse the model and produce poor results
-
-#### Built-in Watermarking
-All audio generated by Chatterbox TTS includes Resemble AI's Perth (Perceptual Threshold) Watermarker - imperceptible neural watermarks that:
-- Survive MP3 compression and audio editing
-- Maintain nearly 100% detection accuracy
-- Are inaudible to human listeners
-
-## Model Requirements and Selection
-
-This MCP server requires the Chatterbox TTS quantized models. The models will be automatically downloaded when first initializing the ChatterboxTTS class.
-
-### Choosing the Right Model for Your System
-
-Chatterbox TTS supports several quantized model variants optimized for different hardware configurations:
-
-#### Model Variants
-
-| Model | File Size | Memory Usage | Speed | Quality | Best For |
-|-------|-----------|--------------|-------|---------|----------|
-| `t3_cfg-q4_k.gguf` | ~312MB | ~2GB RAM | Fastest | Good | Low-memory systems, embedded devices |
-| `t3_cfg-q6_k.gguf` | ~417MB | ~3GB RAM | Fast | Excellent | **Recommended balance** |
-| `t3_cfg-q8_0.gguf` | ~555MB | ~4GB RAM | Moderate | Excellent+ | High-memory systems |
-| `t3_cfg-f16.gguf` | ~1.1GB | ~6GB RAM | Slowest | Best | High-end systems, maximum quality |
-
-#### Hardware Recommendations
-
-**For Raspberry Pi / Edge Devices (2-4GB RAM):**
+### Performance Testing
+Test different models on your system:
 ```bash
-# Use the lightest model
-export CHATTERBOX_MODEL="t3_cfg-q4_k.gguf"
-```
-
-**For Standard Laptops/Desktops (8-16GB RAM):**
-```bash
-# Use the recommended balanced model (default)
-export CHATTERBOX_MODEL="t3_cfg-q6_k.gguf"
-```
-
-**For High-End Workstations (32GB+ RAM):**
-```bash
-# Use the highest quality model
-export CHATTERBOX_MODEL="t3_cfg-f16.gguf"
-```
-
-### Model Configuration
-
-#### Environment Variable Method (Recommended)
-Set the model before starting the MCP server:
-
-```bash
-# Set desired model
-export CHATTERBOX_MODEL="t3_cfg-q6_k.gguf"
-
-# Start the MCP server
-python mcp_server.py
-```
-
-#### Manual Model Selection
-You can also manually download and specify models:
-
-```bash
-# Download specific model
-python -c "
-from chatterbox_tts import ChatterboxTTS
-model = ChatterboxTTS.from_pretrained(model_id='t3_cfg-q4_k.gguf')
-"
-
-# Or download all models for switching
-python -c "
-from chatterbox_tts import ChatterboxTTS
-for model_id in ['t3_cfg-q4_k.gguf', 't3_cfg-q6_k.gguf', 't3_cfg-q8_0.gguf']:
-    ChatterboxTTS.from_pretrained(model_id=model_id)
-"
-```
-
-#### Performance Testing
-Test different models on your system to find the optimal balance:
-
-```bash
-# Test q4_k model
+# Compare model performance
 CHATTERBOX_MODEL="t3_cfg-q4_k.gguf" python -c "
 from chatterbox_tts import ChatterboxTTS
 import time
 model = ChatterboxTTS.from_pretrained()
 start = time.time()
-wav = model.generate('Testing q4k model performance')
-print(f'q4_k generation time: {time.time() - start:.2f}s')
-"
-
-# Test q6_k model  
-CHATTERBOX_MODEL="t3_cfg-q6_k.gguf" python -c "
-from chatterbox_tts import ChatterboxTTS
-import time
-model = ChatterboxTTS.from_pretrained()
-start = time.time()
-wav = model.generate('Testing q6k model performance')
-print(f'q6_k generation time: {time.time() - start:.2f}s')
+wav = model.generate('Performance test')
+print(f'q4_k: {time.time() - start:.2f}s')
 "
 ```
 
-### Memory Requirements
+## Technical Details
 
-- **q4_k**: Minimum 2GB RAM, 4GB recommended
-- **q6_k**: Minimum 3GB RAM, 6GB recommended  
-- **q8_0**: Minimum 4GB RAM, 8GB recommended
-- **f16**: Minimum 6GB RAM, 12GB recommended
+- **Models**: Uses quantized AI models for efficient memory usage
+- **Hardware**: Optimized for Apple Silicon (MPS) and NVIDIA GPUs (CUDA)
+- **Audio**: 24kHz sample rate, supports WAV and MP3 input/output
+- **Watermarking**: All generated audio includes imperceptible watermarks for authenticity
 
-**Note**: These are rough estimates. Actual memory usage depends on text length, voice cloning complexity, and system overhead.
+## License & Credits
 
-## System Requirements
-
-- Python 3.8+
-- PyTorch 2.0+
-- TorchAudio 2.0+
-- For Apple Silicon: macOS with MPS support
-- For NVIDIA GPUs: CUDA-compatible PyTorch installation
-
-## Development
-
-Install development dependencies:
-```bash
-pip install -e ".[dev]"
-```
-
-Run tests:
-```bash
-pytest
-```
-
-Format code:
-```bash
-black .
-isort .
-```
-
-## License
-
-MIT License - see LICENSE file for details.
-
-## Credits
-
-Built on top of the excellent [Chatterbox TTS](https://github.com/resemble-ai/chatterbox) library by Resemble AI.
+MIT License - Built on [Chatterbox TTS](https://github.com/resemble-ai/chatterbox) by Resemble AI.
