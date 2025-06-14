@@ -9,10 +9,12 @@ This is an MCP (Model Context Protocol) server for Chatterbox TTS that provides 
 ## Architecture
 
 - **Single-file MCP server**: `mcp_server.py` contains the complete ChatterboxMCPServer class
-- **Three main tools**:
-  - `chatterbox_tts_generate`: Basic TTS with optional voice cloning
+- **Five main tools**:
+  - `chatterbox_tts_generate`: Basic TTS with optional voice cloning or voice store selection
   - `chatterbox_tts_clone_voice`: Voice cloning from audio samples  
   - `chatterbox_tts_info`: Model and system information
+  - `chatterbox_tts_prepare_audio`: Audio file optimization for voice cloning
+  - `chatterbox_tts_voice_store`: Voice state management (save/load/list/delete)
 - **Dual transport support**: STDIO (default) and SSE (HTTP-based)
 - **Device auto-detection**: Automatically selects CUDA > MPS > CPU
 - **Lazy loading**: ChatterboxTTS model loads on first use
@@ -70,3 +72,24 @@ python mcp_server.py --transport sse --host localhost --port 8000
 - Voice cloning requires existing audio file path validation
 - Sample rate is determined by the loaded model (typically 24kHz)
 - Exaggeration parameter (0.0-1.0) controls voice characteristics
+- Voice store system preserves voice states in memory for seamless switching
+- PyTorch 2.6 compatibility: Uses `weights_only=False` for voice state restoration
+- Hot reload support available with `--hot-reload` flag for development
+
+## Voice Store Usage
+
+The voice store system allows saving and reusing voice configurations:
+
+```bash
+# Save a voice from audio sample
+chatterbox_tts_voice_store(action="save", voice_name="narrator", voice_sample_path="./audio/narrator.wav")
+
+# List available voices
+chatterbox_tts_voice_store(action="list")
+
+# Generate speech with saved voice
+chatterbox_tts_generate(text="Hello world", voice_name="narrator", output_path="./output.wav")
+
+# Delete a voice
+chatterbox_tts_voice_store(action="delete", voice_name="narrator")
+```

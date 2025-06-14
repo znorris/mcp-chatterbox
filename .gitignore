@@ -50,10 +50,10 @@ Thumbs.db
 # Logs
 *.log
 
-# Audio files (temporary outputs)
-*.wav
-*.mp3
-*.m4a
+# Audio files (but keep original samples)
+/audio/test_*.wav
+/audio/*_sample.wav
+/audio/*_cloned_*.wav
 
 # Model cache
 .cache/
